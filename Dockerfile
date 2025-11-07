@@ -1,32 +1,23 @@
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS base
+# RunPod Serverless Infinity Embedding Server
 
-ENV HF_HOME=/runpod-volume
+FROM michaelf34/infinity:latest
 
-# install python and other packages
-RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3-pip \
-    git \
-    wget \
-    libgl1 \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip
+WORKDIR /app
 
-# install uv
-RUN pip install uv
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# install python dependencies
-COPY requirements.txt /requirements.txt
-RUN uv pip install -r /requirements.txt --system
+COPY src/handler.py /app/handler.py
 
-# install torch
-RUN pip install torch==2.5.1+cu124 --index-url https://download.pytorch.org/whl/test/cu124 --no-cache-dir
+COPY test_input.json /app/test_input.json
 
-# Add src files
-ADD src .
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Add test input
-COPY test_input.json /test_input.json
+ENV MODEL_NAME="patrickjohncyh/fashion-clip"
+ENV INFINITY_HOST="localhost"
+ENV INFINITY_PORT="7997"
 
-# start the handler
-CMD python -u /handler.py
+EXPOSE 7997
+
+ENTRYPOINT ["/app/entrypoint.sh"]
