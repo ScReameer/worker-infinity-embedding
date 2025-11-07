@@ -17,6 +17,10 @@ RUN chmod +x /app/entrypoint.sh
 ENV MODEL_NAME="patrickjohncyh/fashion-clip"
 ENV INFINITY_HOST="localhost"
 ENV INFINITY_PORT="7997"
+ENV HF_HOME="/runpod-volume/cache"
+ENV TRANSFORMERS_CACHE="/runpod-volume/cache"
+
+RUN mkdir -p /runpod-volume/cache
 
 EXPOSE 7997
 
