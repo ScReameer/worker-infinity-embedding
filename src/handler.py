@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 import httpx
 import runpod
 
-INFINITY_HOST = os.getenv("INFINITY_HOST", "localhost")
+INFINITY_HOST = os.getenv("INFINITY_HOST", "0.0.0.0")
 INFINITY_PORT = os.getenv("INFINITY_PORT", "7997")
 INFINITY_BASE_URL = f"http://{INFINITY_HOST}:{INFINITY_PORT}"
 DEFAULT_MODEL = os.getenv("MODEL_NAME", "patrickjohncyh/fashion-clip")
