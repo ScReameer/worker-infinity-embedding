@@ -43,7 +43,7 @@ async def call_infinity_embeddings(
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(url, json=payload)
 
-            if response.is_success:
+            if not response.is_success:
                 raise InfinityError(f"Infinity API error ({response.status_code}): {response.text}")
 
             return response.json()
