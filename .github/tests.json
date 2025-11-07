@@ -1,0 +1,52 @@
+[
+  {
+    "input": {
+      "model": "patrickjohncyh/fashion-clip",
+      "input": "A beautiful red dress",
+      "modality": "text"
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  },
+  {
+    "input": {
+      "model": "patrickjohncyh/fashion-clip",
+      "input": ["Blue jeans", "White shirt"],
+      "modality": "text"
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding",
+          "index": 0
+        },
+        {
+          "object": "embedding",
+          "index": 1
+        }
+      ]
+    }
+  },
+  {
+    "input": {
+      "model": "patrickjohncyh/fashion-clip",
+      "input": "https://cdn-icons-png.flaticon.com/256/4838/4838856.png",
+      "modality": "image"
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  }
+]

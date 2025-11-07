@@ -1,6 +1,7 @@
 {
   "input": {
-    "model": "BAAI/bge-small-en-v1.5",
-    "input": "Hello, world!"
+    "model": "patrickjohncyh/fashion-clip",
+    "input": "A beautiful red dress with floral pattern",
+    "modality": "text"
   }
 }
