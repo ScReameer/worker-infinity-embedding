@@ -2,10 +2,9 @@
 
 Docker образ на базе [Infinity](https://github.com/michaelfeil/infinity) для развертывания embedding модели на RunPod Serverless с OpenAI-compatible API.
 
-## Быстрый старт
-### Деплой на RunPod
+## Деплой на RunPod
 
-#### Вариант 1: GitHub Integration (рекомендуется)
+### Вариант 1: GitHub Integration (рекомендуется)
 
 1. Подключить GitHub аккаунт в [RunPod Settings](https://console.runpod.io/user/settings)
 2. В [Serverless Console](https://www.console.runpod.io/serverless) нажать "New Endpoint"
@@ -23,7 +22,7 @@ RunPod автоматически соберет и задеплоит обра�
 
 **Автоматическое тестирование**: RunPod выполнит тесты из `.github/tests.json` перед деплоем.
 
-#### Вариант 2: Docker Hub
+### Вариант 2: Docker Hub
 
 1. Создать Serverless Endpoint на [RunPod Console](https://www.runpod.io/console/serverless)
 2. Указать Docker образ: `<USERNAME>/<REPO>:<TAG>`
@@ -34,9 +33,9 @@ RunPod автоматически соберет и задеплоит обра�
    INFINITY_PORT=7997
    ```
 
-### Использование API
+## API
 
-#### Текстовые эмбеддинги
+### Текстовые эмбеддинги
 
 ```bash
 curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
@@ -51,7 +50,7 @@ curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
   }'
 ```
 
-#### Изображения (CLIP)
+### Изображения (CLIP)
 
 ```bash
 curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
@@ -66,7 +65,7 @@ curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
   }'
 ```
 
-#### Ответ (OpenAI-compatible)
+### Ответ (OpenAI-compatible)
 
 ```json
 {
@@ -86,7 +85,7 @@ curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
 }
 ```
 
-## Интеграция с tsa/embedding/infinity.py
+# Интеграция с tsa/embedding/infinity.py
 
 Обновить `.env`:
 
@@ -96,10 +95,10 @@ CLIP_API_KEY=<YOUR_RUNPOD_API_KEY>
 CLIP_MODEL=patrickjohncyh/fashion-clip
 ```
 
-## Переменные окружения
+# Переменные окружения
 
 | Переменная | По умолчанию | Описание |
 |-----------|-------------|----------|
 | `MODEL_NAME` | `patrickjohncyh/fashion-clip` | HuggingFace model ID |
-| `INFINITY_HOST` | `localhost` | Хост Infinity сервера |
+| `INFINITY_HOST` | `0.0.0.0` | Хост Infinity сервера |
 | `INFINITY_PORT` | `7997` | Порт Infinity сервера |
