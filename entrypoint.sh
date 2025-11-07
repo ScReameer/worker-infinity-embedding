@@ -44,4 +44,4 @@ fi
 
 # Start RunPod handler
 echo "Starting RunPod handler..."
-exec python -u /app/handler.py
+exec python -u -m src.handler

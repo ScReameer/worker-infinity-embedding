@@ -1,7 +1,10 @@
 {
   "input": {
-    "model": "patrickjohncyh/fashion-clip",
-    "input": "A beautiful red dress with floral pattern",
-    "modality": "text"
+    "openai_route": "/v1/embeddings",
+    "openai_input": {
+      "input": ["A beautiful red dress with floral pattern"],
+      "model": "patrickjohncyh/fashion-clip"
+    }
   }
 }
+
