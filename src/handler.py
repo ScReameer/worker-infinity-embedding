@@ -1,158 +1,152 @@
-import asyncio
+"""RunPod serverless handler for Infinity embedding server."""
+
 import os
-import sys
+import time
 from typing import Any, Dict, List, Union
 
-import httpx
 import runpod
 
+from .infinity_client import InfinityClient, InfinityError
+from .utils import detect_modality, create_error_response
+
+
+# Configuration
 INFINITY_HOST = os.getenv("INFINITY_HOST", "0.0.0.0")
 INFINITY_PORT = os.getenv("INFINITY_PORT", "7997")
-INFINITY_BASE_URL = f"http://{INFINITY_HOST}:{INFINITY_PORT}"
 DEFAULT_MODEL = os.getenv("MODEL_NAME", "patrickjohncyh/fashion-clip")
 
-
-class InfinityError(Exception):
-    """Custom exception for Infinity-related errors."""
-
-    pass
+# Initialize Infinity client
+infinity_client = InfinityClient(INFINITY_HOST, INFINITY_PORT)
 
 
-async def call_infinity_embeddings(
-    input_data: Union[str, List[str]], model: str = DEFAULT_MODEL, modality: str = "text"
-) -> Dict[str, Any]:
-    """
-    Call Infinity embeddings endpoint.
-
-    Args:
-        input_data: Text string(s) or image URL(s) to embed
-        model: Model name to use
-        modality: "text" or "image"
-
-    Returns:
-        OpenAI-compatible embeddings response
-    """
-    url = f"{INFINITY_BASE_URL}/embeddings"
-
-    payload = {"model": model, "input": input_data, "encoding_format": "float"}
-
-    if modality == "image":
-        payload["modality"] = modality
-
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(url, json=payload)
-
-            if response.status_code != 200:
-                raise InfinityError(f"Infinity API error ({response.status_code}): {response.text}")
-
-            return response.json()
-
-    except httpx.HTTPError as e:
-        raise InfinityError(f"Failed to connect to Infinity server: {e}")
-    except asyncio.TimeoutError:
-        raise InfinityError("Request to Infinity server timed out")
-
-
-async def async_handler(job: Dict[str, Any]) -> Dict[str, Any]:
+async def async_handler(job: Dict[str, Any]) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     """
     Main handler for RunPod serverless requests.
-
-    Expected input format (OpenAI-compatible):
-    {
-        "input": {
-            "model": "patrickjohncyh/fashion-clip",
-            "input": "text to embed" or ["text1", "text2"] or ["https://image.url"],
-            "modality": "text" or "image"  # optional, defaults to "text"
-        }
-    }
-
-    Alternative format (direct):
-    {
-        "input": {
-            "text": "text to embed" or ["text1", "text2"],
-            "image": "https://image.url" or ["url1", "url2"],
-            "model": "model-name"  # optional
-        }
-    }
+    
+    Supports OpenAI-compatible routing and standard formats:
+    - OpenAI: https://api.runpod.ai/v2/<ID>/openai/v1/embeddings
+    - Standard: {"input": {"model": "...", "input": "...", "modality": "..."}}
+    
+    Args:
+        job: RunPod job dictionary
+        
+    Returns:
+        Response dictionary or list of dictionaries for OpenAI compatibility
     """
     try:
         job_input = job.get("input", {})
-
-        if "input" in job_input:
-            input_data = job_input["input"]
-            model = job_input.get("model", DEFAULT_MODEL)
-            modality = job_input.get("modality", "text")
-            result = await call_infinity_embeddings(input_data=input_data, model=model, modality=modality)
-            return result
-
-        elif "text" in job_input:
-            text_data = job_input["text"]
-            model = job_input.get("model", DEFAULT_MODEL)
-
-            result = await call_infinity_embeddings(input_data=text_data, model=model, modality="text")
-            return result
-
-        elif "image" in job_input:
-            image_data = job_input["image"]
-            model = job_input.get("model", DEFAULT_MODEL)
-
-            result = await call_infinity_embeddings(input_data=image_data, model=model, modality="image")
-            return result
-
-        else:
-            return {
-                "error": "Invalid input format. Expected 'input', 'text', or 'image' field.",
-                "details": "See handler documentation for correct format.",
-            }
-
+        
+        # OpenAI-compatible routing
+        if "openai_route" in job_input:
+            return await handle_openai_route(job_input)
+        
+        # Standard format handling
+        return await handle_standard_format(job_input)
+        
     except InfinityError as e:
-        return {"error": str(e), "type": "InfinityError"}
-
+        return create_error_response(str(e), "InfinityError")
     except Exception as e:
-        return {"error": f"Unexpected error: {str(e)}", "type": type(e).__name__}
+        print(f"[HANDLER] Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        return create_error_response(f"Unexpected error: {str(e)}", type(e).__name__)
 
 
-def check_infinity_server():
+async def handle_openai_route(job_input: Dict[str, Any]) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     """
-    Check if Infinity server is running and accessible.
-    This is called on startup to ensure the environment is properly configured.
+    Handle OpenAI-compatible routes.
+    
+    RunPod automatically converts /openai/v1/embeddings to:
+    {"input": {"openai_route": "/v1/embeddings", "openai_input": {...}}}
+    
+    Args:
+        job_input: Job input containing openai_route and openai_input
+        
+    Returns:
+        Response in OpenAI format
     """
-    import requests
+    openai_route = job_input.get("openai_route")
+    openai_input = job_input.get("openai_input", {})
+    
+    if openai_route == "/v1/models":
+        return {
+            "object": "list",
+            "data": [{
+                "id": DEFAULT_MODEL,
+                "object": "model",
+                "owned_by": "infinity",
+                "created": int(time.time())
+            }]
+        }
+    
+    elif openai_route == "/v1/embeddings":
+        if not openai_input:
+            return create_error_response("Missing openai_input for embeddings request")
+        
+        model = openai_input.get("model", DEFAULT_MODEL)
+        input_data = openai_input.get("input")
+        
+        if not input_data:
+            return create_error_response("Missing 'input' field in openai_input")
+        
+        # Auto-detect or use explicit modality
+        explicit_modality = openai_input.get("modality")
+        modality = detect_modality(input_data, explicit_modality)
+        
+        result = await infinity_client.get_embeddings(input_data, model, modality)
+        
+        # Return as list for OpenAI compatibility (return_as_list=True behavior)
+        return [result]
+    
+    else:
+        return create_error_response(f"Unsupported OpenAI route: {openai_route}")
 
-    try:
-        response = requests.get(f"{INFINITY_BASE_URL}/health", timeout=5)
-        if response.status_code == 200:
-            print(f"✓ Infinity server is running at {INFINITY_BASE_URL}")
-            return True
-    except requests.exceptions.RequestException:
-        pass
 
-    try:
-        response = requests.get(f"{INFINITY_BASE_URL}/", timeout=5)
-        if response.status_code in [200, 404]:  # 404 is OK, means server is up
-            print(f"✓ Infinity server is accessible at {INFINITY_BASE_URL}")
-            return True
-    except requests.exceptions.RequestException as e:
-        print(f"✗ Cannot connect to Infinity server at {INFINITY_BASE_URL}", file=sys.stderr)
-        print(f"  Error: {e}", file=sys.stderr)
-        print("  Make sure INFINITY_HOST and INFINITY_PORT are set correctly", file=sys.stderr)
-        return False
-
-    return False
+async def handle_standard_format(job_input: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle standard RunPod format requests.
+    
+    Supports multiple input formats:
+    - {"input": "...", "model": "...", "modality": "..."}
+    - {"text": "...", "model": "..."}
+    - {"image": "...", "model": "..."}
+    
+    Args:
+        job_input: Job input dictionary
+        
+    Returns:
+        Embeddings response
+    """
+    model = job_input.get("model", DEFAULT_MODEL)
+    
+    # Format 1: input + modality
+    if "input" in job_input:
+        input_data = job_input["input"]
+        modality = job_input.get("modality", "text")
+        return await infinity_client.get_embeddings(input_data, model, modality)
+    
+    # Format 2: explicit text field
+    elif "text" in job_input:
+        text_data = job_input["text"]
+        return await infinity_client.get_embeddings(text_data, model, "text")
+    
+    # Format 3: explicit image field
+    elif "image" in job_input:
+        image_data = job_input["image"]
+        return await infinity_client.get_embeddings(image_data, model, "image")
+    
+    else:
+        return create_error_response(
+            "Invalid input format. Expected 'input', 'text', or 'image' field."
+        )
 
 
 if __name__ == "__main__":
-    if not check_infinity_server():
-        print("Warning: Infinity server check failed. Handler may not work correctly.", file=sys.stderr)
-
-    print("Starting RunPod serverless handler for Infinity")
-    print(f"Default model: {DEFAULT_MODEL}")
-    print(f"Infinity URL: {INFINITY_BASE_URL}")
-
-    runpod.serverless.start(
-        {
-            "handler": async_handler,
-            "return_aggregate_stream": False,
-        }
-    )
+    print("Starting RunPod serverless handler")
+    print(f"Model: {DEFAULT_MODEL}")
+    print(f"Infinity: http://{INFINITY_HOST}:{INFINITY_PORT}")
+    
+    runpod.serverless.start({
+        "handler": async_handler,
+        "return_aggregate_stream": False,
+    })
