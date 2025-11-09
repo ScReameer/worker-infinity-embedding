@@ -1,53 +1,72 @@
 """Utility functions for the RunPod Infinity embedding handler."""
 
-from typing import Any, Dict, List, Union, Optional
+from typing import Any
 
 
-def detect_modality(input_data: Union[str, List[str]], explicit_modality: Optional[str] = None) -> str:
+def is_image_data(data: str) -> bool:
     """
-    Detect the modality (text or image) for input data.
-    
-    Supports:
-    - Explicit modality specification
-    - Image URLs (http/https with image extensions)
-    - Base64 images (data:image/...)
-    - Arrays (checks first element)
+    Check if a string represents image data.
     
     Args:
-        input_data: Input data (string or list of strings)
-        explicit_modality: Explicitly specified modality
+        data: String to check
         
     Returns:
-        "image" or "text"
+        True if data is an image URL or base64 image
     """
-    if explicit_modality:
-        return explicit_modality
-    
-    def is_image_data(data: str) -> bool:
-        """Check if a string represents image data."""
-        if not isinstance(data, str):
-            return False
-            
-        # Base64 images
-        if data.startswith("data:image/"):
-            return True
-            
-        # Image URLs
-        if data.startswith(("http://", "https://")):
-            image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".tiff", ".ico"]
-            return any(ext in data.lower() for ext in image_extensions)
-        
+    if not isinstance(data, str):
         return False
+        
+    # Base64 images
+    if data.startswith("data:image/"):
+        return True
+        
+    # Image URLs
+    if data.startswith(("http://", "https://")):
+        image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".tiff", ".ico"]
+        return any(ext in data.lower() for ext in image_extensions)
     
-    if isinstance(input_data, str):
-        return "image" if is_image_data(input_data) else "text"
-    elif isinstance(input_data, list) and len(input_data) > 0:
-        return "image" if is_image_data(input_data[0]) else "text"
-    
-    return "text"
+    return False
 
 
-def create_error_response(message: str, error_type: str = "BadRequestError", code: int = 400) -> Dict[str, Any]:
+def detect_modalities_per_item(input_data: list[str]) -> list[str]:
+    """
+    Detect modality for each item in the input list individually.
+    
+    This is used for mixed text/image inputs where each item may have different modality.
+    
+    Args:
+        input_data: List of strings (text, URLs, or base64 images)
+        
+    Returns:
+        List of modalities ("text" or "image") for each input item
+    """
+    return ["image" if is_image_data(item) else "text" for item in input_data]
+
+
+def group_by_modality(input_data: list[str], modalities: list[str]) -> tuple[list[tuple[int, str]], list[tuple[int, str]]]:
+    """
+    Group input items by their modality, preserving original indices.
+    
+    Args:
+        input_data: List of input strings
+        modalities: List of modalities corresponding to input_data
+        
+    Returns:
+        Tuple of (text_items, image_items) where each item is (original_index, data)
+    """
+    text_items = []
+    image_items = []
+    
+    for idx, (data, modality) in enumerate(zip(input_data, modalities)):
+        if modality == "image":
+            image_items.append((idx, data))
+        else:
+            text_items.append((idx, data))
+    
+    return text_items, image_items
+
+
+def create_error_response(message: str, error_type: str = "BadRequestError", code: int = 400) -> dict[str, Any]:
     """
     Create an OpenAI-compatible error response.
     

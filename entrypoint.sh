@@ -43,5 +43,4 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
 fi
 
 # Start RunPod handler
-echo "Starting RunPod handler..."
 exec python -u -m src.handler
