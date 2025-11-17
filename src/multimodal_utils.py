@@ -46,7 +46,7 @@ async def _download_image_from_url(url: str, client) -> Image.Image:
     try:
         logger.debug(f"Downloading image from URL: {url}")
         response = await client.get(url)
-        response.raise_for_status()  # Raises exception for 4xx/5xx status codes
+        response.raise_for_status()
         
         img_bytes = response.content
         logger.debug(f"Downloaded {len(img_bytes)} bytes from {url} (status: {response.status_code})")
@@ -202,25 +202,3 @@ async def validate_item_for_modality(item: Any, modality: str, index: int, clien
     except (ValueError, NotImplementedError) as e:
         # Re-raise with index information for better error messages
         raise type(e)(f"Item at index {index}: {str(e)}") from e
-
-
-def extract_modality(job_input: dict[str, Any], openai_input: dict[str, Any] | None = None) -> str:
-    """
-    Extract modality parameter from job input.
-    Checks extra_body (OpenAI format) first, then direct input field.
-    Defaults to "text" for backward compatibility.
-    
-    Args:
-        job_input: The main job input dictionary
-        openai_input: Optional OpenAI-format input dictionary
-        
-    Returns:
-        Modality string: "text", "image", or "audio"
-    """
-    if openai_input:
-        # OpenAI format: check extra_body
-        extra_body = openai_input.get("extra_body", {})
-        return extra_body.get("modality", "text")
-    else:
-        # Direct format: check top-level modality field
-        return job_input.get("modality", "text")
