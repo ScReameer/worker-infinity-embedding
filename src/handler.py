@@ -2,6 +2,7 @@ import runpod
 from utils import create_error_response
 from typing import Any
 from embedding_service import EmbeddingService
+from multimodal_utils import extract_modality
 
 # Gracefully catch configuration errors (e.g. missing env vars) so the user sees
 # a clean message instead of a full Python traceback when the container starts.
@@ -25,16 +26,20 @@ async def async_generator_handler(job: dict[str, Any]):
         if openai_route and openai_route == "/v1/models":
             call_fn, kwargs = embedding_service.route_openai_models, {}
         elif openai_route and openai_route == "/v1/embeddings":
-            model_name = openai_input.get("model")
             if not openai_input:
                 return create_error_response("Missing input").model_dump()
+            model_name = openai_input.get("model")
             if not model_name:
                 return create_error_response(
                     "Did not specify model in openai_input"
                 ).model_dump()
+            
+            modality = extract_modality(job_input, openai_input)
+            
             call_fn, kwargs = embedding_service.route_openai_get_embeddings, {
                 "embedding_input": openai_input.get("input"),
                 "model_name": model_name,
+                "modality": modality,
                 "return_as_list": True,
             }
         else:
@@ -51,9 +56,11 @@ async def async_generator_handler(job: dict[str, Any]):
                 "model_name": job_input.get("model"),
             }
         elif job_input.get("input"):
+            modality = extract_modality(job_input)
             call_fn, kwargs = embedding_service.route_openai_get_embeddings, {
                 "embedding_input": job_input.get("input"),
                 "model_name": job_input.get("model"),
+                "modality": modality,
             }
         else:
             return create_error_response(f"Invalid input: {job}").model_dump()
