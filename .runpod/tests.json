@@ -1,7 +1,24 @@
 {
   "tests": [
     {
-      "name": "multimodal_text",
+      "name": "text_embedding_explicit_modality",
+      "input": {
+        "openai_route": "/v1/embeddings",
+        "openai_input": {
+          "model": "patrickjohncyh/fashion-clip",
+          "input": "A beautiful red dress",
+          "extra_body": {
+            "modality": "text"
+          }
+        }
+      },
+      "expected_output": {
+        "status": "COMPLETED"
+      },
+      "timeout": 10000
+    },
+    {
+      "name": "text_embedding_default_modality",
       "input": {
         "openai_route": "/v1/embeddings",
         "openai_input": {
@@ -15,12 +32,15 @@
       "timeout": 10000
     },
     {
-      "name": "multimodal_image_url",
+      "name": "image_url_embedding",
       "input": {
         "openai_route": "/v1/embeddings",
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
-          "input": "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400"
+          "input": "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg",
+          "extra_body": {
+            "modality": "image"
+          }
         }
       },
       "expected_output": {
@@ -29,15 +49,18 @@
       "timeout": 15000
     },
     {
-      "name": "multimodal_multiple_images",
+      "name": "multiple_images",
       "input": {
         "openai_route": "/v1/embeddings",
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
           "input": [
-            "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400",
-            "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400"
-          ]
+            "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg",
+            "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg"
+          ],
+          "extra_body": {
+            "modality": "image"
+          }
         }
       },
       "expected_output": {
@@ -46,7 +69,7 @@
       "timeout": 20000
     },
     {
-      "name": "multimodal_multiple_texts",
+      "name": "multiple_texts",
       "input": {
         "openai_route": "/v1/embeddings",
         "openai_input": {
@@ -55,7 +78,10 @@
             "A red dress",
             "A blue shirt",
             "Black shoes"
-          ]
+          ],
+          "extra_body": {
+            "modality": "text"
+          }
         }
       },
       "expected_output": {
@@ -64,23 +90,21 @@
       "timeout": 15000
     },
     {
-      "name": "multimodal_mixed_text_and_images",
+      "name": "audio_not_implemented",
       "input": {
         "openai_route": "/v1/embeddings",
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
-          "input": [
-            "A red summer dress",
-            "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400",
-            "A blue winter coat",
-            "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400"
-          ]
+          "input": "audio data",
+          "extra_body": {
+            "modality": "audio"
+          }
         }
       },
       "expected_output": {
-        "status": "COMPLETED"
+        "status": "FAILED"
       },
-      "timeout": 25000
+      "timeout": 5000
     },
     {
       "name": "get_models_list",
