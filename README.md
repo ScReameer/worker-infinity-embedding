@@ -4,7 +4,7 @@
 
 High-throughput, OpenAI-compatible **text & image embedding** & reranker powered by [Infinity](https://github.com/michaelfeil/infinity)
 
-**✨ New: Multimodal Support!** Now supports text, images (URLs & base64), and mixed inputs.
+**✨ New: Multimodal Support!** Now supports text and image embeddings (URLs & base64) with an explicit `modality` switch per request.
 
 ---
 
@@ -23,8 +23,7 @@ High-throughput, OpenAI-compatible **text & image embedding** & reranker powered
    1. [List Models](#list-models-1)
    2. [Text Embeddings](#text-embeddings)
    3. [Image Embeddings](#image-embeddings)
-   4. [Mixed Text & Image Inputs](#mixed-text--image-inputs)
-   5. [Reranking](#reranking)
+   4. [Reranking](#reranking)
 6. [Testing](#testing)
 7. [Further Documentation](#further-documentation)
 8. [Acknowledgements](#acknowledgements)
@@ -42,19 +41,28 @@ High-throughput, OpenAI-compatible **text & image embedding** & reranker powered
 
 ## Multimodal Features
 
-### Supported Input Types
+### Supported Modalities
 
 - ✅ **Text** – traditional text embeddings
 - ✅ **Image URLs** – `http://` or `https://` links to images (`.jpg`, `.png`, `.gif`, etc.)
 - ✅ **Base64 Images** – data URI format (`data:image/png;base64,...`)
-- ✅ **Mixed Inputs** – combine text and images in a single request (order preserved)
 
-### Automatic Type Detection
+Each request targets a single modality:
 
-The worker automatically detects whether your input is text or an image:
-- URLs ending with image extensions → processed as images
-- Data URI with `data:image/...;base64` → decoded and processed as images
-- Everything else → processed as text
+| Modality | How to request                                  | Notes                                             |
+| -------- | ------------------------------------------------ | ------------------------------------------------- |
+| `text`   | Default; or set `modality="text"`               | Works with any deployed embedding model           |
+| `image`  | Set `modality="image"`                          | Requires a multimodal model (see below)           |
+| `audio`  | Planned                                          | Returns a clear `NotImplementedError` for now     |
+
+> **Tip:** For OpenAI-compatible requests, include `"modality": "…"` alongside `model` and `input`. For native `/runsync` requests, pass `modality` inside the `input` object. If omitted, the worker assumes `text`.
+
+### Explicit Modality Selection
+
+- The previous automatic detector has been replaced with an explicit `modality` flag so you stay in control of routing.
+- All inputs are validated eagerly for the chosen modality with detailed, index-aware error messages.
+- Image downloads run through a shared `httpx.AsyncClient` with tuned keep-alive limits, timeouts, and a desktop browser User-Agent—improving compatibility with CDNs that block generic clients.
+- If you configure `extra_body` via an OpenAI SDK, the `modality` field still arrives at the server top-level—no additional parsing is required.
 
 ### Multimodal Models
 
@@ -116,17 +124,18 @@ Except for transport (path + wrapper object) the JSON you send/receive is identi
 
 #### Request Fields (shared)
 
-| Field   | Type                | Required | Description                                                                                                                |
-| ------- | ------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `model` | string              | **Yes**  | One of the IDs supplied via `MODEL_NAMES`.                                                                                 |
-| `input` | string &#124; array | **Yes**  | Text string(s), image URL(s), base64 image(s), or mixed list. Automatically detects type. Order preserved for mixed inputs.|
+| Field      | Type                | Required | Description                                                                                                                |
+| ---------- | ------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `model`    | string              | **Yes**  | One of the IDs supplied via `MODEL_NAMES`.                                                                                 |
+| `input`    | string &#124; array | **Yes**  | Text string(s) or image URL/base64 list matching the selected modality. Order is preserved.                               |
+| `modality` | string              | No       | Required for images. Accepts `text` (default) or `image`. For OpenAI requests supply via `extra_body.modality`.           |
 
 OpenAI route vs. Standard:
 
-| Flavour  | Method | Path             | Body                                          |
-| -------- | ------ | ---------------- | --------------------------------------------- |
-| OpenAI   | `POST` | `/v1/embeddings` | `{ "model": "…", "input": "…" }`              |
-| Standard | `POST` | `/runsync`       | `{ "input": { "model": "…", "input": "…" } }` |
+| Flavour  | Method | Path             | Body                                                                   |
+| -------- | ------ | ---------------- | ---------------------------------------------------------------------- |
+| OpenAI   | `POST` | `/v1/embeddings` | `{ "model": "…", "input": "…", "modality": "text" }` (modality optional for text) |
+| Standard | `POST` | `/runsync`       | `{ "input": { "model": "…", "input": "…", "modality": "text" } }`             |
 
 #### Response (both flavours)
 
@@ -203,13 +212,13 @@ curl -X POST \
 curl -X POST \
   -H "Authorization: Bearer <API_KEY>" \
   -H "Content-Type: application/json" \
-  -d '{"model":"BAAI/bge-small-en-v1.5","input":"Hello world"}' \
+  -d '{"model":"BAAI/bge-small-en-v1.5","input":"Hello world","modality":"text"}' \
   https://api.runpod.ai/v2/<ENDPOINT_ID>/openai/v1/embeddings
 
 # Standard RunPod format
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"input":{"model":"BAAI/bge-small-en-v1.5","input":"Hello world"}}' \
+  -d '{"input":{"model":"BAAI/bge-small-en-v1.5","input":"Hello world","modality":"text"}}' \
   https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync
 ```
 
@@ -220,50 +229,17 @@ curl -X POST \
 curl -X POST \
   -H "Authorization: Bearer <API_KEY>" \
   -H "Content-Type: application/json" \
-  -d '{"model":"patrickjohncyh/fashion-clip","input":"https://example.com/image.jpg"}' \
+  -d '{"model":"patrickjohncyh/fashion-clip","input":"https://example.com/image.jpg","modality":"image"}' \
   https://api.runpod.ai/v2/<ENDPOINT_ID>/openai/v1/embeddings
 
 # Standard RunPod format (base64 image)
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"input":{"model":"patrickjohncyh/fashion-clip","input":"data:image/png;base64,iVBORw0KG..."}}' \
+  -d '{"input":{"model":"patrickjohncyh/fashion-clip","input":"data:image/png;base64,iVBORw0KG...","modality":"image"}}' \
   https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync
 ```
 
-### Mixed Text & Image Inputs
-
-```bash
-# OpenAI-compatible format
-curl -X POST \
-  -H "Authorization: Bearer <API_KEY>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "patrickjohncyh/fashion-clip",
-    "input": [
-      "Hello, world!",
-      "https://example.com/image.jpg",
-      "Bye, world!"
-    ]
-  }' \
-  https://api.runpod.ai/v2/<ENDPOINT_ID>/openai/v1/embeddings
-
-# Standard RunPod format
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": {
-      "model": "patrickjohncyh/fashion-clip",
-      "input": [
-        "Hello, world!",
-        "https://example.com/image.jpg",
-        "Bye, world!"
-      ]
-    }
-  }' \
-  https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync
-```
-
-**Note:** Output embeddings will be in the same order as inputs!
+> **Note:** Send one request per modality. If you need both text and image embeddings, issue two calls so each payload is validated consistently.
 
 ### Reranking
 
