@@ -59,7 +59,6 @@ Each request targets a single modality:
 
 ### Explicit Modality Selection
 
-- The previous automatic detector has been replaced with an explicit `modality` flag so you stay in control of routing.
 - All inputs are validated eagerly for the chosen modality with detailed, index-aware error messages.
 - Image downloads run through a shared `httpx.AsyncClient` with tuned keep-alive limits, timeouts, and a desktop browser User-Agent—improving compatibility with CDNs that block generic clients.
 - If you configure `extra_body` via an OpenAI SDK, the `modality` field still arrives at the server top-level—no additional parsing is required.
