@@ -1,10 +1,8 @@
 import httpx
 
-DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+from config import HttpClientConfig
 
-DEFAULT_TIMEOUT = 10.0 
-DEFAULT_MAX_CONNECTIONS = 50 
-DEFAULT_MAX_KEEPALIVE_CONNECTIONS = 20 
+_CLIENT_CONFIG = HttpClientConfig()
 
 
 def create_http_client() -> httpx.AsyncClient:
@@ -15,16 +13,16 @@ def create_http_client() -> httpx.AsyncClient:
         httpx.AsyncClient with proper timeout, limits, and headers configured.
     """
     limits = httpx.Limits(
-        max_connections=DEFAULT_MAX_CONNECTIONS,
-        max_keepalive_connections=DEFAULT_MAX_KEEPALIVE_CONNECTIONS,
+        max_connections=_CLIENT_CONFIG.max_connections,
+        max_keepalive_connections=_CLIENT_CONFIG.max_keepalive_connections,
     )
-    
-    timeout = httpx.Timeout(DEFAULT_TIMEOUT)
-    
+
+    timeout = httpx.Timeout(_CLIENT_CONFIG.timeout_seconds)
+
     headers = {
-        "User-Agent": DEFAULT_USER_AGENT,
+        "User-Agent": _CLIENT_CONFIG.user_agent,
     }
-    
+
     return httpx.AsyncClient(
         limits=limits,
         timeout=timeout,
