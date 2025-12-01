@@ -56,11 +56,10 @@ Each request targets a single modality:
 
 > **Tip:** For OpenAI-compatible requests, include `"modality": "…"` alongside `model` and `input`. For native `/runsync` requests, pass `modality` inside the `input` object. If omitted, the worker assumes `text`.
 
-### Explicit Modality Selection
+### Validation & Image Fetching Defaults
 
 - All inputs are validated eagerly for the chosen modality with detailed, index-aware error messages.
-- Image downloads run through a shared `httpx.AsyncClient` with tuned keep-alive limits, timeouts, and a desktop browser User-Agent—improving compatibility with CDNs that block generic clients.
-- If you configure `extra_body` via an OpenAI SDK, the `modality` field still arrives at the server top-level—no additional parsing is required.
+- Image downloads run through a shared `httpx.AsyncClient` with tuned keep-alive limits, timeouts, and a desktop browser User-Agent—improving compatibility with CDNs that block generic clients. All of these knobs can be overridden using the `HTTP_CLIENT_*` environment variables listed below.
 
 ### Multimodal Models
 
@@ -85,6 +84,10 @@ All behaviour is controlled through environment variables:
 | `DTYPES`                 | No       | `auto`  | Precision per model (`auto`, `fp16`, `fp8`). Semicolon-separated, must match `MODEL_NAMES`.<br>Example: `auto;auto`                                 |
 | `INFINITY_QUEUE_SIZE`    | No       | `48000` | Max items queueable inside the Infinity engine.                                                                                                     |
 | `RUNPOD_MAX_CONCURRENCY` | No       | `300`   | Max concurrent requests the RunPod wrapper will accept.                                                                                             |
+| `HTTP_CLIENT_USER_AGENT` | No       | Desktop Chrome UA | Override the browser-style User-Agent used for outbound image downloads.                                                                            |
+| `HTTP_CLIENT_TIMEOUT`    | No       | `10.0`  | Request timeout (seconds) for outbound image fetches.                                                                                               |
+| `HTTP_CLIENT_MAX_CONNECTIONS` | No | `50`    | Concurrent connection pool size for the shared `httpx` client.                                                                                      |
+| `HTTP_CLIENT_MAX_KEEPALIVE_CONNECTIONS` | No | `20` | Max keep-alive sockets retained by the shared `httpx` client.                                                                                       |
 
 ---
 
