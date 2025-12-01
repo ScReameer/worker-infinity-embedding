@@ -7,9 +7,7 @@
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
           "input": "A beautiful red dress",
-          "extra_body": {
-            "modality": "text"
-          }
+          "modality": "text"
         }
       },
       "expected_output": {
@@ -38,9 +36,7 @@
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
           "input": "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg",
-          "extra_body": {
-            "modality": "image"
-          }
+          "modality": "image"
         }
       },
       "expected_output": {
@@ -58,9 +54,7 @@
             "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg",
             "https://raw.githubusercontent.com/pytorch/hub/master/images/dog.jpg"
           ],
-          "extra_body": {
-            "modality": "image"
-          }
+          "modality": "image"
         }
       },
       "expected_output": {
@@ -79,9 +73,7 @@
             "A blue shirt",
             "Black shoes"
           ],
-          "extra_body": {
-            "modality": "text"
-          }
+          "modality": "text"
         }
       },
       "expected_output": {
@@ -96,9 +88,7 @@
         "openai_input": {
           "model": "patrickjohncyh/fashion-clip",
           "input": "audio data",
-          "extra_body": {
-            "modality": "audio"
-          }
+          "modality": "audio"
         }
       },
       "expected_output": {
