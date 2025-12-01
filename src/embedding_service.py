@@ -129,42 +129,54 @@ class EmbeddingService:
             )
 
             # Route to appropriate embedding method based on modality
-            if modality == "text":
-                logger.debug(f"Calling .embed() with {len(validated_items)} text items")
-                embeddings, usage = await self.engine_array[model_name].embed(
-                    validated_items
-                )
-                logger.debug(f"Successfully got {len(embeddings)} text embeddings")
+            try:
+                if modality == "text":
+                    logger.debug(
+                        f"Calling .embed() with {len(validated_items)} text items"
+                    )
+                    embeddings, usage = await self.engine_array[model_name].embed(
+                        validated_items
+                    )
+                    logger.debug(
+                        f"Successfully got {len(embeddings)} text embeddings"
+                    )
 
-            elif modality == "image":
-                logger.debug(
-                    f"Calling .image_embed() with {len(validated_items)} image items"
-                )
-                try:
+                elif modality == "image":
+                    logger.debug(
+                        f"Calling .image_embed() with {len(validated_items)} image items"
+                    )
                     embeddings, usage = await self.engine_array[model_name].image_embed(
                         images=validated_items
                     )
-                    logger.debug(f"Successfully got {len(embeddings)} image embeddings")
-                except ModelNotDeployedError as e:
+                    logger.debug(
+                        f"Successfully got {len(embeddings)} image embeddings"
+                    )
+
+                elif modality == "audio":
+                    raise NotImplementedError(
+                        "Audio modality is not yet implemented. "
+                        "Currently supported modalities: 'text', 'image'"
+                    )
+
+                else:
+                    raise ValueError(
+                        f"Invalid modality: '{modality}'. "
+                        f"Supported modalities: 'text', 'image', 'audio' (not yet implemented)"
+                    )
+            except ModelNotDeployedError as e:
+                if modality == "image":
                     error_msg = (
                         f"Model '{model_name}' does not support image embeddings. "
                         f"Please use a multimodal model (e.g., 'jinaai/jina-clip-v1') "
                         f"or use modality='text' instead."
                     )
-                    logger.error(f"{error_msg} Original error: {e}")
-                    raise ValueError(error_msg) from e
-
-            elif modality == "audio":
-                raise NotImplementedError(
-                    "Audio modality is not yet implemented. "
-                    "Currently supported modalities: 'text', 'image'"
-                )
-
-            else:
-                raise ValueError(
-                    f"Invalid modality: '{modality}'. "
-                    f"Supported modalities: 'text', 'image', 'audio' (not yet implemented)"
-                )
+                else:
+                    error_msg = (
+                        f"Model '{model_name}' is not deployed or does not support "
+                        f"{modality} embeddings."
+                    )
+                logger.error(f"{error_msg} Original error: {e}")
+                raise ValueError(error_msg) from e
 
             if return_as_list:
                 return [
