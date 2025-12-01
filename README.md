@@ -24,9 +24,8 @@ High-throughput, OpenAI-compatible **text & image embedding** & reranker powered
    2. [Text Embeddings](#text-embeddings)
    3. [Image Embeddings](#image-embeddings)
    4. [Reranking](#reranking)
-6. [Testing](#testing)
-7. [Further Documentation](#further-documentation)
-8. [Acknowledgements](#acknowledgements)
+6. [Further Documentation](#further-documentation)
+7. [Acknowledgements](#acknowledgements)
 
 ---
 
