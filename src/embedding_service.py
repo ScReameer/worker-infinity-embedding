@@ -98,14 +98,16 @@ class EmbeddingService:
 
             available_models = self.list_models()
             if model_name not in available_models:
-                logger.error(
-                    f"Requested model '{model_name}' not found. "
-                    f"Available models: {available_models}"
+                available_models_msg = (
+                    ", ".join(available_models) if available_models else "none"
                 )
-                raise ValueError(
-                    f"Model '{model_name}' is not available. "
-                    f"Available models: {', '.join(available_models)}"
+                error_msg = (
+                    f"Model '{model_name}' is not deployed. "
+                    f"Available deployments: {available_models_msg}. "
+                    f"Deploy the requested model or choose one of the available models."
                 )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
             if not isinstance(embedding_input, list):
                 embedding_input = [embedding_input]
@@ -164,17 +166,17 @@ class EmbeddingService:
                         f"Supported modalities: 'text', 'image', 'audio' (not yet implemented)"
                     )
             except ModelNotDeployedError as e:
-                if modality == "image":
-                    error_msg = (
-                        f"Model '{model_name}' does not support image embeddings. "
-                        f"Please use a multimodal model (e.g., 'jinaai/jina-clip-v1') "
-                        f"or use modality='text' instead."
-                    )
-                else:
-                    error_msg = (
-                        f"Model '{model_name}' is not deployed or does not support "
-                        f"{modality} embeddings."
-                    )
+                available_capabilities = sorted(
+                    getattr(self.engine_array[model_name], "capabilities", set())
+                )
+                capabilities_hint = (
+                    ", ".join(available_capabilities) if available_capabilities else "none"
+                )
+                error_msg = (
+                    f"Model '{model_name}' does not expose the '{modality}' capability. "
+                    f"Detected capabilities: {capabilities_hint}. Deploy a model that supports "
+                    f"this modality or adjust the request."
+                )
                 logger.error(f"{error_msg} Original error: {e}")
                 raise ValueError(error_msg) from e
 

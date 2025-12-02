@@ -158,6 +158,9 @@ def test_wrong_modality_error() -> None:
     result = response.json()
     error_msg = _extract_error_message(result)
     assert error_msg is not None, f"Expected error object, got: {result}"
+    lowered = error_msg.lower()
+    assert "does not expose the 'image' capability" in lowered
+    assert "detected capabilities" in lowered
 
 
 def test_audio_not_implemented() -> None:
@@ -362,7 +365,9 @@ def test_edge_nonexistent_model() -> None:
     result = response.json()
     error_msg = _extract_error_message(result)
     assert error_msg is not None, f"Expected model missing error: {result}"
-    assert "not available" in error_msg.lower() or "not found" in error_msg.lower()
+    lowered = error_msg.lower()
+    assert "is not deployed" in lowered
+    assert "available deployments" in lowered
 
 
 def test_edge_invalid_image_url() -> None:
