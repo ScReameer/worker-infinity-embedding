@@ -84,7 +84,7 @@ All behaviour is controlled through environment variables:
 | `DTYPES`                 | No       | `auto`  | Precision per model (`auto`, `fp16`, `fp8`). Semicolon-separated, must match `MODEL_NAMES`.<br>Example: `auto;auto`                                 |
 | `INFINITY_QUEUE_SIZE`    | No       | `48000` | Max items queueable inside the Infinity engine.                                                                                                     |
 | `RUNPOD_MAX_CONCURRENCY` | No       | `300`   | Max concurrent requests the RunPod wrapper will accept.                                                                                             |
-| `HTTP_CLIENT_USER_AGENT` | No       | Desktop Chrome UA | Override the browser-style User-Agent used for outbound image downloads.                                                                            |
+| `HTTP_CLIENT_USER_AGENT` | No       | `Mozilla/5.0 ... Chrome/120.0.0.0 Safari/537.36` | Override the browser-style User-Agent used for outbound image downloads.                                                                            |
 | `HTTP_CLIENT_TIMEOUT`    | No       | `10.0`  | Request timeout (seconds) for outbound image fetches.                                                                                               |
 | `HTTP_CLIENT_MAX_CONNECTIONS` | No | `50`    | Concurrent connection pool size for the shared `httpx` client.                                                                                      |
 | `HTTP_CLIENT_MAX_KEEPALIVE_CONNECTIONS` | No | `20` | Max keep-alive sockets retained by the shared `httpx` client.                                                                                       |
