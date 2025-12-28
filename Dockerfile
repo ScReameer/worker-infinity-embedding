@@ -1,26 +1,24 @@
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS base
+# RunPod Serverless Infinity Embedding Server
+FROM michaelf34/infinity:latest
 
-ENV HF_HOME=/runpod-volume
+WORKDIR /app
 
-# install python and other packages
-RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3-pip \
-    git \
-    wget \
-    libgl1 \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# install uv
-RUN pip install uv
+COPY src ./src
+COPY entrypoint.sh .
+COPY test_input.json .
+RUN chmod +x entrypoint.sh
 
-# install python dependencies
-COPY requirements.txt /requirements.txt
-RUN uv pip install -r /requirements.txt --system
+ENV MODEL_NAME="patrickjohncyh/fashion-clip"
+ENV INFINITY_HOST="0.0.0.0"
+ENV INFINITY_PORT="7997"
+ENV DO_NOT_TRACK=1
+ENV HF_HOME="/runpod-volume/cache"
+ENV TRANSFORMERS_CACHE="/runpod-volume/cache"
 
-# install torch
-RUN pip install torch==2.5.1+cu124 --index-url https://download.pytorch.org/whl/test/cu124 --no-cache-dir
+RUN mkdir -p /runpod-volume/cache
 
 # Add src files
 ADD src .

@@ -1,6 +1,14 @@
 {
   "input": {
-    "model": "BAAI/bge-small-en-v1.5",
-    "input": "Hello, world!"
+    "openai_route": "/v1/embeddings",
+    "openai_input": {
+      "input": [
+        "A beautiful red dress with floral pattern",
+        "https://github.com/openai/CLIP/raw/main/CLIP.png",
+        "Blue jeans"
+      ],
+      "model": "patrickjohncyh/fashion-clip"
+    }
   }
 }
+

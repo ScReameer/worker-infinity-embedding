@@ -1,0 +1,124 @@
+[
+  {
+    "name": "OpenAI format - Single text",
+    "input": {
+      "openai_route": "/v1/embeddings",
+      "openai_input": {
+        "model": "patrickjohncyh/fashion-clip",
+        "input": "A beautiful red dress"
+      }
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  },
+  {
+    "name": "OpenAI format - Multiple texts",
+    "input": {
+      "openai_route": "/v1/embeddings",
+      "openai_input": {
+        "model": "patrickjohncyh/fashion-clip",
+        "input": ["Blue jeans", "White shirt"]
+      }
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding",
+          "index": 0
+        },
+        {
+          "object": "embedding",
+          "index": 1
+        }
+      ]
+    }
+  },
+  {
+    "name": "OpenAI format - Single image URL",
+    "input": {
+      "openai_route": "/v1/embeddings",
+      "openai_input": {
+        "model": "patrickjohncyh/fashion-clip",
+        "input": ["https://github.com/openai/CLIP/raw/main/CLIP.png"]
+      }
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  },
+  {
+    "name": "OpenAI format - Mixed text and image",
+    "input": {
+      "openai_route": "/v1/embeddings",
+      "openai_input": {
+        "model": "patrickjohncyh/fashion-clip",
+        "input": [
+          "A beautiful red dress",
+          "https://github.com/openai/CLIP/raw/main/CLIP.png",
+          "Blue jeans"
+        ]
+      }
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding",
+          "index": 0
+        },
+        {
+          "object": "embedding",
+          "index": 1
+        },
+        {
+          "object": "embedding",
+          "index": 2
+        }
+      ]
+    }
+  },
+  {
+    "name": "Standard format - Text with explicit modality",
+    "input": {
+      "model": "patrickjohncyh/fashion-clip",
+      "input": "A beautiful red dress",
+      "modality": "text"
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  },
+  {
+    "name": "Standard format - Image with explicit modality",
+    "input": {
+      "model": "patrickjohncyh/fashion-clip",
+      "input": "https://github.com/openai/CLIP/raw/main/CLIP.png",
+      "modality": "image"
+    },
+    "expected_output": {
+      "object": "list",
+      "data": [
+        {
+          "object": "embedding"
+        }
+      ]
+    }
+  }
+]
